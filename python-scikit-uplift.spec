@@ -14,23 +14,15 @@ campaign.}
 Name:           python-%{pypi_name}
 Version:        0.3.2
 Release:        1%{?dist}
-Summary:        uplift modeling in scikit-learn style in python
+Summary:        Uplift modeling in scikit-learn style in python
 
 License:        MIT
 URL:            https://github.com/maks-sh/scikit-uplift
-Source0:        %{url}/archive/%{version}/%{pypi_name}-%{version}.tar.gz
+Source0:        %{url}/archive/v%{version}/%{pypi_name}-%{version}.tar.gz
 
 BuildArch:      noarch
 
 BuildRequires:  python3-devel
-BuildRequires:  python3dist(setuptools)
-BuildRequires:  python3dist(sphinx)
-BuildRequires:  python3dist(recommonmark)
-BuildRequires:  python3dist(sphinxcontrib-bibtex)
-BuildRequires:  python3dist(sphinx-rtd-theme)
-BuildRequires:  python3dist(pytest)
-BuildRequires:  python3dist(scikit-learn)
-BuildRequires:  python3dist(pandas)
 
 %description %_description
 
@@ -40,7 +32,8 @@ Summary:        %{summary}
 %description -n python3-%{pypi_name} %_description
 
 %package -n python-%{pypi_name}-doc
-Summary:        scikit-uplift documentation
+Summary:        Scikit-uplift documentation
+
 %description -n python-%{pypi_name}-doc
 Documentation for scikit-uplift package
 
@@ -49,18 +42,35 @@ Documentation for scikit-uplift package
 # Remove bundled egg-info
 rm -rf %{pypi_name}.egg-info
 
+%generate_buildrequires
+# No setup.cfg, tox.ini or pyproject.toml
+echo 'python3dist(pip) >= 19'
+echo 'python3dist(packaging)'
+echo 'python3dist(setuptools) >= 40.8'
+echo 'python3dist(wheel)'
+echo 'python3dist(sphinx)'
+echo 'python3dist(recommonmark)'
+echo 'python3dist(sphinxcontrib-bibtex)'
+echo 'python3dist(sphinx-rtd-theme)'
+echo 'python3dist(pytest)'
+echo 'python3dist(scikit-learn)'
+echo 'python3dist(pandas)'
+
 %build
-%py3_build
+%pyproject_wheel
+
 # generate html docs
 PYTHONPATH=${PWD} sphinx-build-3 docs html
 # remove the sphinx-build leftovers
 rm -rf html/.{doctrees,buildinfo}
 
 %install
-%py3_install
+%pyproject_install
 
 # Remove extra install files
 rm -rf %{buildroot}/%{python3_sitelib}/tests
+
+%pyproject_save_files %{short_name}
 
 %check
 %if %{with tests}
@@ -68,11 +78,9 @@ rm -rf %{buildroot}/%{python3_sitelib}/tests
 %pytest -k 'not test_fetch_hillstrom and not test_fetch_criteo10 and not test_return_X_y_t'
 %endif
 
-%files -n python3-%{pypi_name}
+%files -n python3-%{pypi_name} -f %{pyproject_files}
 %license LICENSE
 %doc Readme.rst
-%{python3_sitelib}/%{short_name}
-%{python3_sitelib}/%{pretty_name}-%{version}-py%{python3_version}.egg-info
 
 %files -n python-%{pypi_name}-doc
 %doc html
